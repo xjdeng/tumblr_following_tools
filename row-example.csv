@@ -1,0 +1,6 @@
+,Setting
+Label,
+ConsumerKey,MyKey
+ConsumerSecret,MySecret
+OauthToken,MyOToken
+OauthSecret,MyOSecret
