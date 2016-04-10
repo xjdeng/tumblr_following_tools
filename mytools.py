@@ -2,6 +2,7 @@ import pytumblr as py
 import pandas as pd
 import time
 import unicodedata
+import httplib
 
 def getClient(credentials):
     df = pd.read_csv(credentials)
@@ -57,10 +58,31 @@ def find_tumblr(mykey,mylist):
 
 def u_to_s(uni):
     return unicodedata.normalize('NFKD',uni).encode('ascii','ignore')
+
+def smartBlogInfo(myblog, oneblog):
+    import socket
+    try:
+        bloginfo = myblog.blog_info(oneblog)
+    except (httplib.HTTPException):
+        bloginfo = smartBlogInfo(myblog = myblog, oneblog = oneblog)
+    except socket.error:
+        bloginfo = smartBlogInfo(myblog = myblog, oneblog = oneblog)
+    return bloginfo
+
+def blogname(myraw,i):
+    return u_to_s(myraw[i]['uuid'])
+
+def staleBlogs(myraw, days=50):
+    fdays = float(days)
+    result = []
+    for i in range(0,len(myraw)):
+        tmptime = (time.time() - myraw[i]['updated'] )/86400.0
+        if tmptime > fdays:
+            result.append(blogname(myraw,i))
+    return result
     
-def getF(myfunction, flist = None, offset0 = 0, waittime=1, autorestart = True): #myfunction default: client.following
+def getF_old(myfunction, flist = None, offset0 = 0, waittime=1, autorestart = True): #myfunction default: client.following
     if flist == None:
-        import httplib
         n = myfunction()['total_blogs']
         m = 20
         rem = n % m
@@ -77,8 +99,7 @@ def getF(myfunction, flist = None, offset0 = 0, waittime=1, autorestart = True):
                     print "Warning! Error in retrieving followers! Partial list returned!"
                     print "List size: {}, Total size: {}, Rerun with offset0 = {}".format(len(result), n, offset0 + len(result))
                 else:
-                    print "Error. Autocorrecting"
-                    myresult = getF(myfunction = myfunction, flist = flist, offset0 = offset0 + len(result), waittime = waittime, autorestart = autorestart)
+                    myresult = getF_old(myfunction = myfunction, flist = flist, offset0 = offset0 + len(result), waittime = waittime, autorestart = autorestart)
                     result = result + myresult
                 return result                
             for j in range(0,m):
@@ -90,6 +111,53 @@ def getF(myfunction, flist = None, offset0 = 0, waittime=1, autorestart = True):
         return result                
     else:
         return load_tumblr_csv(flist)
+
+def rawF(myfunction, waittime = 1, autorestart = True, verbose = False, cutoff = None):
+    import socket
+    n = myfunction()['total_blogs']
+    if cutoff != None:
+        n = min(n,cutoff)
+    m = 20
+    rem = n % m
+    cycles = n/m
+    result = []
+    for i in range(0,cycles):
+        if verbose == True:
+            print "Trying blogs {} to {}".format(m*i + 1, m*i + m)
+        time.sleep(waittime)
+        params = {'offset': m*i, 'limit': m}
+        goahead = False
+        while goahead == False:
+            try:
+                tmp = myfunction(**params)
+                goahead = True
+            except (IOError, httplib.HTTPException, socket.error):
+                goahead = False
+        result = result + tmp['blogs']
+    params = {'offset': m*cycles, 'limit': rem}
+    if verbose == True:
+        print "Finishing..."
+    if rem != 0:
+        goahead = False
+        while goahead == False:
+            try:
+                tmp = myfunction(**params)
+                goahead = True
+            except (IOError, httplib.HTTPException, socket.error):
+                goahead = False
+        result = result + tmp['blogs']
+    return result
+
+def getF(myfunction=None, flist = None, waittime=1, myraw = None,cutoff = None):
+    if flist == None:
+        if myraw == None:
+            myraw = rawF(myfunction = myfunction, waittime = waittime,cutoff = cutoff)
+        result = []
+        for i in range(0,len(myraw)):
+            result.append(blogname(myraw,i))
+        return result
+    else:
+        return load_tumblr_csv(flist) 
         
 def follow_wizard(target,myfollowing,maxfollow=200):
     if maxfollow > 200:
