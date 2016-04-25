@@ -111,7 +111,7 @@ def rawF(myfunction, waittime = 1, autorestart = True, verbose = False, cutoff =
     result = []
     for i in range(0,cycles):
         if verbose == True:
-            print "Trying blogs {} to {}".format(m*i + 1, m*i + m)
+            print "Trying Blogs {} to {}".format(m*i + 1, m*i + m)
         params = {'offset': m*i, 'limit': m}
         goahead = False
         while goahead == False:
@@ -136,6 +136,49 @@ def rawF(myfunction, waittime = 1, autorestart = True, verbose = False, cutoff =
                 goahead = False
         result = result + tmp['blogs']
     return result
+    
+def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout, targetBlog = None):
+    minfo = myblog.info()
+    minfo2 = minfo['user']['blogs'][0]
+    if targetBlog == None:
+        targetBlog = u_to_s(minfo2['name'])
+    n = minfo2['posts']
+    socket.setdefaulttimeout(timeout)
+    if cutoff != None:
+        n = min(n,cutoff)
+    m = 20
+    rem = n % m
+    cycles = n/m
+    result = []
+    for i in range(0,cycles):
+        if verbose == True:
+            print "Trying Posts {} to {}".format(m*i + 1, m*i + m)
+        params = {'offset': m*i, 'limit': m}
+        goahead = False
+        while goahead == False:
+            try:
+                time.sleep(waittime)
+                tmp = myblog.posts(targetBlog,**params)
+                goahead = True
+            except usual_suspects:
+                goahead = False
+        result = result + tmp['posts']
+    params = {'offset': m*cycles, 'limit': rem}
+    if verbose == True:
+        print "Finishing..."
+    if rem != 0:
+        goahead = False
+        while goahead == False:
+            try:
+                time.sleep(waittime)
+                tmp = myblog.posts(targetBlog,**params)
+                goahead = True
+            except usual_suspects:
+                goahead = False
+        result = result + tmp['posts']
+    return result        
+    
+    
 
 def getF(myfunction=None, flist = None, waittime=1, myraw = None, cutoff = None, verbose = False, timeout = 10): #myfunction default: client.following
     if flist == None:
