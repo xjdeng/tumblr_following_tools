@@ -3,6 +3,16 @@ import pandas as pd
 import time
 import unicodedata
 import httplib
+import httplib2
+import random
+import socket
+
+usual_suspects = (IOError, httplib.HTTPException, httplib2.ServerNotFoundError, socket.error, socket.timeout)
+
+default_timeout = 10;
+
+def randdelay(a,b):
+    time.sleep(random.uniform(a,b))
 
 def getClient(credentials):
     df = pd.read_csv(credentials)
@@ -20,11 +30,27 @@ def tumblr_follow_html(mylist,outfile="followme.html"):
     n = len(mylist)
     f = open(outfile,'w')
     for i in range(0,n):
-        myurl = mylist[i]
+        myurl = strip_tumblr(mylist[i])
         mystr = "<p><a href=\"http://www.tumblr.com/follow/{}\" target=\"blank\">{}</a></p>\n".format(myurl,myurl)
         f.write(mystr)
     f.close()
-        
+
+def auto_unfollow(mylist, myclient, verbose=False, timeout = default_timeout):
+    n = len(mylist)
+    socket.setdefaulttimeout(timeout)
+    for i in range(0,n):
+        randdelay(1,3)
+        if verbose == True:
+            print "Trying blog #:{}".format(1+i)
+        goahead = False
+        while goahead == False:
+            try:
+                tmp = myclient.unfollow(mylist[i])
+                goahead = True
+                if verbose == True:
+                    print "\n{}\n".format(tmp)
+            except usual_suspects:
+                goahead = False
     
 def strip_tumblr(mystr):
     if len(mystr) < 11:
@@ -59,20 +85,12 @@ def find_tumblr(mykey,mylist):
 def u_to_s(uni):
     return unicodedata.normalize('NFKD',uni).encode('ascii','ignore')
 
-def smartBlogInfo(myblog, oneblog):
-    import socket
-    try:
-        bloginfo = myblog.blog_info(oneblog)
-    except (httplib.HTTPException):
-        bloginfo = smartBlogInfo(myblog = myblog, oneblog = oneblog)
-    except socket.error:
-        bloginfo = smartBlogInfo(myblog = myblog, oneblog = oneblog)
-    return bloginfo
-
 def blogname(myraw,i):
     return u_to_s(myraw[i]['uuid'])
 
-def staleBlogs(myraw, days=50):
+def staleBlogs(myblog = None, myraw = None, days=50, verbose=False):
+    if myraw == None:
+        myraw = rawF(myblog.following, verbose = verbose)
     fdays = float(days)
     result = []
     for i in range(0,len(myraw)):
@@ -81,40 +99,10 @@ def staleBlogs(myraw, days=50):
             result.append(blogname(myraw,i))
     return result
     
-def getF_old(myfunction, flist = None, offset0 = 0, waittime=1, autorestart = True): #myfunction default: client.following
-    if flist == None:
-        n = myfunction()['total_blogs']
-        m = 20
-        rem = n % m
-        cycles = n/m
-        cycle0 = offset0/m
-        result = []
-        for i in range(cycle0,cycles):
-            time.sleep(waittime)
-            params = {'offset': m*i, 'limit': m}
-            try:
-                tmp = myfunction(**params)
-            except (IOError, httplib.HTTPException):
-                if autorestart == False:
-                    print "Warning! Error in retrieving followers! Partial list returned!"
-                    print "List size: {}, Total size: {}, Rerun with offset0 = {}".format(len(result), n, offset0 + len(result))
-                else:
-                    myresult = getF_old(myfunction = myfunction, flist = flist, offset0 = offset0 + len(result), waittime = waittime, autorestart = autorestart)
-                    result = result + myresult
-                return result                
-            for j in range(0,m):
-                result.append(u_to_s(tmp['blogs'][j]['uuid']))
-        params = {'offset': m*cycles, 'limit': rem}
-        tmp = myfunction(**params)
-        for j in range(0,rem):
-            result.append(u_to_s(tmp['blogs'][j]['uuid']))
-        return result                
-    else:
-        return load_tumblr_csv(flist)
 
-def rawF(myfunction, waittime = 1, autorestart = True, verbose = False, cutoff = None):
-    import socket
+def rawF(myfunction, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout): #myfunction default: client.following
     n = myfunction()['total_blogs']
+    socket.setdefaulttimeout(timeout)
     if cutoff != None:
         n = min(n,cutoff)
     m = 20
@@ -124,14 +112,14 @@ def rawF(myfunction, waittime = 1, autorestart = True, verbose = False, cutoff =
     for i in range(0,cycles):
         if verbose == True:
             print "Trying blogs {} to {}".format(m*i + 1, m*i + m)
-        time.sleep(waittime)
         params = {'offset': m*i, 'limit': m}
         goahead = False
         while goahead == False:
             try:
+                time.sleep(waittime)
                 tmp = myfunction(**params)
                 goahead = True
-            except (IOError, httplib.HTTPException, socket.error):
+            except usual_suspects:
                 goahead = False
         result = result + tmp['blogs']
     params = {'offset': m*cycles, 'limit': rem}
@@ -141,17 +129,18 @@ def rawF(myfunction, waittime = 1, autorestart = True, verbose = False, cutoff =
         goahead = False
         while goahead == False:
             try:
+                time.sleep(waittime)
                 tmp = myfunction(**params)
                 goahead = True
-            except (IOError, httplib.HTTPException, socket.error):
+            except usual_suspects:
                 goahead = False
         result = result + tmp['blogs']
     return result
 
-def getF(myfunction=None, flist = None, waittime=1, myraw = None,cutoff = None):
+def getF(myfunction=None, flist = None, waittime=1, myraw = None, cutoff = None, verbose = False, timeout = 10): #myfunction default: client.following
     if flist == None:
         if myraw == None:
-            myraw = rawF(myfunction = myfunction, waittime = waittime,cutoff = cutoff)
+            myraw = rawF(myfunction = myfunction, waittime = waittime,cutoff = cutoff, verbose = verbose, timeout = timeout)
         result = []
         for i in range(0,len(myraw)):
             result.append(blogname(myraw,i))
