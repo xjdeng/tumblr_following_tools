@@ -137,9 +137,9 @@ def rawF(myfunction, waittime = 1, autorestart = True, verbose = False, cutoff =
         result = result + tmp['blogs']
     return result
     
-def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout, targetBlog = None):
+def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout, targetBlog = None, blogNumber=0):
     minfo = myblog.info()
-    minfo2 = minfo['user']['blogs'][0]
+    minfo2 = minfo['user']['blogs'][blogNumber]
     if targetBlog == None:
         targetBlog = u_to_s(minfo2['name'])
     n = minfo2['posts']
