@@ -135,7 +135,7 @@ Now go to File -> Download as -> Comma-separated values (.csv, curret sheet)
 And save that file into the same directory as this program and your **credentials.csv** file.  Call it **target.csv** (although you can use any name you like, I'll be referring it to target.csv from now on.)
 
 
-### Create your follower list for Tumblr ###
+### Create your target following list for Tumblr ###
 
 Hopefully, the program has finished getting your list of people you're following by now.  If so, run the following:
 
