@@ -142,14 +142,68 @@ def rawF(myfunction, waittime = 1, autorestart = True, verbose = False, cutoff =
                 goahead = False
         result = result + tmp['blogs']
     return result
+
+def getFollowers(myblog, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout, targetBlog = None, blogNumber=0):
+    socket.setdefaulttimeout(timeout)
+    goahead = False
+    while goahead == False:
+        try:
+            minfo = myblog.info()
+            minfo2 = minfo['user']['blogs'][blogNumber]
+            if targetBlog == None:
+                targetBlog = u_to_s(minfo2['name'])
+            n = myblog.followers(targetBlog)['total_users']
+            goahead = True
+        except usual_suspects:
+            goahead = False
+
+    if cutoff != None:
+        n = min(n,cutoff)
+    m = 20
+    rem = n % m
+    cycles = n/m
+    result = []    
+    for i in range(0,cycles):
+        if verbose == True:
+            print "Trying Blogs {} to {}".format(m*i + 1, m*i + m)
+        params = {'offset': m*i, 'limit': m}
+        goahead = False
+        while goahead == False:
+            try:
+                time.sleep(waittime)
+                tmp = myblog.followers(targetBlog,**params)
+                goahead = True
+            except usual_suspects:
+                goahead = False
+        result = result + tmp['users']
+    params = {'offset': m*cycles, 'limit': rem}
+    if verbose == True:
+        print "Finishing..."
+    if rem != 0:
+        goahead = False
+        while goahead == False:
+            try:
+                time.sleep(waittime)
+                tmp = myblog.followers(targetBlog,**params)
+                goahead = True
+            except usual_suspects:
+                goahead = False
+        result = result + tmp['users']
+    return result
     
 def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout, targetBlog = None, blogNumber=0):
-    minfo = myblog.info()
+    socket.setdefaulttimeout(timeout)
+    goahead = False
+    while goahead == False:
+        try:
+            minfo = myblog.info()
+            goahead = True
+        except usual_suspects:
+            goahead = False
     minfo2 = minfo['user']['blogs'][blogNumber]
     if targetBlog == None:
         targetBlog = u_to_s(minfo2['name'])
     n = minfo2['posts']
-    socket.setdefaulttimeout(timeout)
     if cutoff != None:
         n = min(n,cutoff)
     m = 20
