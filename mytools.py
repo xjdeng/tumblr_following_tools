@@ -18,6 +18,18 @@ def getClient(credentials):
     df = pd.read_csv(credentials)
     client = py.TumblrRestClient(df['ConsumerKey'][0], df['ConsumerSecret'][0], df['OauthToken'][0], df['OauthSecret'][0])
     return client
+    
+def name(myblog,blogNumber=0):
+    goahead = False
+    while goahead == False:
+        try:
+            minfo = myblog.info()
+            minfo2 = minfo['user']['blogs'][blogNumber]
+            targetBlog = u_to_s(minfo2['name'])
+            goahead = True
+        except usual_suspects:
+            goahead = False
+    return targetBlog   
 
 def load_tumblr_csv(mylist):
     tmp = pd.read_csv(mylist, header=None).values.tolist()
