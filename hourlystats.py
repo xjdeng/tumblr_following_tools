@@ -2,6 +2,7 @@ import mytools as m
 import time
 import pandas as pd
 import sqlite3
+import sys
 
 def processFollowers(myfollowers):
     n = len(myfollowers)
@@ -25,7 +26,17 @@ def processFollowers(myfollowers):
     df = pd.DataFrame({'Year': years, 'Month': months, 'Day': days, 'Hour': hours, 'Minute': minutes, 'User': user, 'Idle': idle})
     return df
 
-def toSqlite(filename, myinput):
+def toSqlite(filename,myinput):
     cnx = sqlite3.connect(filename)
     myinput.to_sql('data',cnx)
     cnx.close()
+
+def main(argv):
+    client = m.getClient(argv[1])
+    myf = m.getFollowers(client)
+    pf = processFollowers(myf)
+    toSqlite(m.name(client) + ".db",pf)
+    
+
+if __name__ == '__main__':
+    main(sys.argv)
