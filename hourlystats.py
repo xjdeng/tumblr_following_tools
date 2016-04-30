@@ -35,7 +35,7 @@ def main(argv):
     client = m.getClient(argv[1])
     myf = m.getFollowers(client)
     pf = processFollowers(myf)
-    toSqlite(m.name(client) + ".db",pf)
+    toSqlite(argv[2] + "/" + m.name(client) + ".db",pf)
     
 
 if __name__ == '__main__':
