@@ -28,7 +28,7 @@ def processFollowers(myfollowers):
 
 def toSqlite(filename,myinput):
     cnx = sqlite3.connect(filename)
-    myinput.to_sql('data',cnx)
+    myinput.to_sql('data',cnx,if_exists='append')
     cnx.close()
 
 def main(argv):
