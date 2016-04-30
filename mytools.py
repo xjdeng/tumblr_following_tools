@@ -101,8 +101,14 @@ def staleBlogs(myblog = None, myraw = None, days=50, verbose=False):
     
 
 def rawF(myfunction, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout): #myfunction default: client.following
-    n = myfunction()['total_blogs']
     socket.setdefaulttimeout(timeout)
+    goahead = False
+    while goahead == False:
+        try:
+            n = myfunction()['total_blogs']
+            goahead = True
+        except usual_suspects:
+            goahead = False
     if cutoff != None:
         n = min(n,cutoff)
     m = 20
