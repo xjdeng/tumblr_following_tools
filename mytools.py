@@ -18,6 +18,14 @@ def getClient(credentials):
     df = pd.read_csv(credentials)
     client = py.TumblrRestClient(df['ConsumerKey'][0], df['ConsumerSecret'][0], df['OauthToken'][0], df['OauthSecret'][0])
     return client
+
+def blogExists(client, blog):
+    a = client.blog_info(blog)
+    try:
+        tmp = a['blog']
+        return True
+    except KeyError:
+        return False
     
 def name(myblog,blogNumber=0):
     goahead = False
@@ -31,12 +39,29 @@ def name(myblog,blogNumber=0):
             goahead = False
     return targetBlog   
 
-def load_tumblr_csv(mylist):
-    tmp = pd.read_csv(mylist, header=None).values.tolist()
+def load_tumblr_csv(myfile):
+    tmp = pd.read_csv(myfile, header=None).values.tolist()
     tmp2 = []
     for i in range(0,len(tmp)):
         tmp2.append(tmp[i][0])
     return tmp2
+
+def save_tumblr_csv(myfile, mylist):
+    tmp = pd.DataFrame(mylist)
+    tmp.to_csv(myfile, index=False, header = False)
+
+def bulk_scrape_users(myfile):
+    import scrape_users
+    tmp = set(load_tumblr_csv(myfile))
+    everybody = []
+    reblogged = []
+    liked = []
+    for i in tmp:
+        (a,b,c) = scrape_users.runme(i)
+        everybody += a
+        reblogged += b
+        liked += c
+    return((list(set(everybody)),list(set(reblogged)),list(set(liked))))
 
 def tumblr_follow_html(mylist,outfile="followme.html"):
     n = len(mylist)
@@ -264,8 +289,6 @@ def getF(myfunction=None, flist = None, waittime=1, myraw = None, cutoff = None,
         return load_tumblr_csv(flist) 
         
 def follow_wizard(target,myfollowing,maxfollow=200):
-    if maxfollow > 200:
-        maxfollow = 200
     targets = 0
     n = len(target)
     i = 0
