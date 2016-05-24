@@ -26,6 +26,13 @@ def blogExists(client, blog):
         return True
     except KeyError:
         return False
+
+def cleanup(myblog, mylist):
+    newlist = []
+    for i in mylist:
+        if blogExists(myblog, i):
+            newlist.append(i)
+    return newlist
     
 def name(myblog,blogNumber=0):
     goahead = False
