@@ -97,6 +97,7 @@ def auto_unfollow(mylist, myclient, verbose=False, timeout = default_timeout):
                 goahead = False
     
 def strip_tumblr(mystr):
+    mystr = mystr.rstrip()
     if len(mystr) < 11:
         return mystr
     elif mystr[len(mystr)-11:] == ".tumblr.com":
@@ -105,6 +106,7 @@ def strip_tumblr(mystr):
         return mystr
 
 def append_tumblr(mystr):
+    mystr = mystr.rstrip()
     if len(mystr) < 11:
         return mystr + ".tumblr.com"
     elif mystr[len(mystr)-11:] == ".tumblr.com":
@@ -304,7 +306,7 @@ def follow_wizard(target,myfollowing,maxfollow=200):
         finder = find_tumblr(target[i],myfollowing)
         if finder == False:
             targets += 1
-            result.append(target[i])
+            result.append(target[i].rstrip())
         i += 1
     return result
             
