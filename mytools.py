@@ -299,6 +299,7 @@ def getF(myfunction=None, flist = None, waittime=1, myraw = None, cutoff = None,
         
 def follow_wizard(target,myfollowing,maxfollow=200):
     targets = 0
+    random.shuffle(target)
     n = len(target)
     i = 0
     result = []
