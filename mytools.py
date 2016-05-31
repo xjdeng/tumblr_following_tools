@@ -19,19 +19,18 @@ def getClient(credentials):
     client = py.TumblrRestClient(df['ConsumerKey'][0], df['ConsumerSecret'][0], df['OauthToken'][0], df['OauthSecret'][0])
     return client
 
-def blogExists(client, blog):
-    a = client.blog_info(blog)
-    try:
-        tmp = a['blog']
-        return True
-    except KeyError:
-        return False
 
-def cleanup(myblog, mylist):
+def cleanup(myblog, mylist, fdays=50):
     newlist = []
     for i in mylist:
-        if blogExists(myblog, i):
-            newlist.append(i)
+        try:
+            tmp = myblog.blog_info(i.rstrip())
+            updated = tmp['blog']['updated']
+            tmptime = (time.time() - updated )/86400.0
+            if tmptime < fdays:
+                newlist.append(i)
+        except KeyError:
+            x = 1                
     return newlist
     
 def name(myblog,blogNumber=0):
