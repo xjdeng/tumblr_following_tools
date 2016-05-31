@@ -33,7 +33,7 @@ def runme(url, threshold = 100):
                     break
             except NoSuchElementException:
                 break
-        except (StaleElementReferenceException, socket.error):
+        except (StaleElementReferenceException, socket.error, socket.timeout):
             x = 0
     lis = browser.find_elements_by_tag_name("li")
     reblogged = []
