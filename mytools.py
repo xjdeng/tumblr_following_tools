@@ -281,7 +281,28 @@ def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff =
             except usual_suspects:
                 goahead = False
         result = result + tmp['posts']
-    return result        
+    return result 
+
+def getImagePosts(myblog, myposts = None, blogNumber=0):
+    if myposts is None:
+        myposts = getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout, targetBlog = None, blogNumber=blogNumber)
+    dates = []
+    postURLs = []
+    imageURLs = []
+    notes = []
+    for p in myposts:
+        if (p['trail'] == []) & (u_to_s(p['type']) == 'photo'):
+            dates.append(u_to_s(p['date']))
+            postURLs.append(u_to_s(p['post_url']))
+            imageURLs.append(u_to_s(p['photos'][0]['original_size']['url']))
+            notes.append(p['note_count'])
+    results = pd.DataFrame()
+    results['Date'] = dates
+    results['Post URL'] = postURLs
+    results['Image URL'] = imageURLs
+    results['Notes'] = notes
+    results = results.sort_values(by="Notes",ascending=False)
+    return results
     
     
 
