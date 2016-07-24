@@ -246,9 +246,12 @@ def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff =
         except usual_suspects:
             goahead = False
     minfo2 = minfo['user']['blogs'][blogNumber]
+    n = minfo2['posts']
     if targetBlog == None:
         targetBlog = u_to_s(minfo2['name'])
-    n = minfo2['posts']
+    else:
+        tmpinfo = myblog.blog_info(targetBlog)
+        n = tmpinfo['blog']['posts']
     if cutoff != None:
         n = min(n,cutoff)
     m = 20
@@ -304,7 +307,24 @@ def getImagePosts(myblog, myposts = None, blogNumber=0):
     results = results.sort_values(by="Notes",ascending=False)
     return results
     
-    
+def getPostTitles(posts):
+    titles = []
+    for p in posts:
+        try:
+            mytitle = p['title']
+            tmptitle = u_to_s(mytitle)
+            titles.append(tmptitle.replace("\r","").replace("\n",""))
+        except TypeError:
+            pass
+        except KeyError:
+            try:
+                mytitle = p['summary']
+                tmptitle = u_to_s(mytitle)
+                titles.append(tmptitle.replace("\r","").replace("\n",""))
+            except (TypeError, KeyError):
+                pass
+    return titles
+                
 
 def getF(myfunction=None, flist = None, waittime=1, myraw = None, cutoff = None, verbose = False, timeout = 10): #myfunction default: client.following
     if flist == None:
