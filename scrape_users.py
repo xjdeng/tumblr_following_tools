@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 import time,random,socket,unicodedata
+from httplib import BadStatusLine
 
 def u_to_s(uni):
     return unicodedata.normalize('NFKD',uni).encode('ascii','ignore')
@@ -17,7 +18,7 @@ def str_to_user(tgt,mystr):
     
 def runme(url, threshold = 100):
     browser = webdriver.Firefox()
-    browser.get(url)
+    browser.get(url)   
     while threshold > 0:        
         try:
             morenotes = browser.find_element_by_partial_link_text("Show more notes")
@@ -34,7 +35,8 @@ def runme(url, threshold = 100):
             except NoSuchElementException:
                 break
         except (StaleElementReferenceException, socket.error, socket.timeout):
-            x = 0
+            pass
+            
     lis = browser.find_elements_by_tag_name("li")
     reblogged = []
     liked = []

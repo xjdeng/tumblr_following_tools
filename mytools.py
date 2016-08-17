@@ -6,6 +6,7 @@ import httplib
 import httplib2
 import random
 import socket
+import sys
 
 usual_suspects = (IOError, httplib.HTTPException, httplib2.ServerNotFoundError, socket.error, socket.timeout)
 
@@ -30,7 +31,7 @@ def cleanup(myblog, mylist, fdays=50):
             if tmptime < fdays:
                 newlist.append(i)
         except KeyError:
-            x = 1                
+            pass              
     return newlist
     
 def name(myblog,blogNumber=0):
@@ -63,7 +64,12 @@ def bulk_scrape_users(myfile):
     reblogged = []
     liked = []
     for i in tmp:
-        (a,b,c) = scrape_users.runme(i)
+        try:
+            (a,b,c) = scrape_users.runme(i)
+        except:
+            print "Unexpected error:", sys.exc_info()[0]
+            print i
+            return((list(set(everybody)),list(set(reblogged)),list(set(liked))))
         everybody += a
         reblogged += b
         liked += c
@@ -313,14 +319,16 @@ def getPostTitles(posts):
         try:
             mytitle = p['title']
             tmptitle = u_to_s(mytitle)
-            titles.append(tmptitle.replace("\r","").replace("\n",""))
+            if len(tmptitle) > 0:
+                titles.append(tmptitle.replace("\r","").replace("\n",""))
         except TypeError:
             pass
         except KeyError:
             try:
                 mytitle = p['summary']
                 tmptitle = u_to_s(mytitle)
-                titles.append(tmptitle.replace("\r","").replace("\n",""))
+                if len(tmptitle) > 0:
+                    titles.append(tmptitle.replace("\r","").replace("\n",""))
             except (TypeError, KeyError):
                 pass
     return titles
