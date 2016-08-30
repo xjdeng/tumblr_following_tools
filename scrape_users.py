@@ -43,7 +43,7 @@ def runme(url, threshold = 100):
             except NoSuchElementException:
                 break
         except StaleElementReferenceException:
-            threshold -+ 1
+            threshold -= 1
         except (socket.error, socket.timeout):
             break
             
