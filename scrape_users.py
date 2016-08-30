@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 import time,random,socket,unicodedata
-from httplib import BadStatusLine
+
 
 def u_to_s(uni):
     return unicodedata.normalize('NFKD',uni).encode('ascii','ignore')
@@ -18,7 +18,15 @@ def str_to_user(tgt,mystr):
     
 def runme(url, threshold = 100):
     browser = webdriver.Firefox()
-    browser.get(url)   
+    browser.get(url)
+    try:
+        showbutton = browser.find_element_by_id("notes-toggle")
+        teststr = u_to_s(showbutton.text)
+        if teststr == "Show":
+            showbutton.click()
+            randdelay(0,1)
+    except (NoSuchElementException, StaleElementReferenceException, socket.error, socket.timeout):
+        pass
     while threshold > 0:        
         try:
             morenotes = browser.find_element_by_partial_link_text("Show more notes")
@@ -34,8 +42,10 @@ def runme(url, threshold = 100):
                     break
             except NoSuchElementException:
                 break
-        except (StaleElementReferenceException, socket.error, socket.timeout):
-            pass
+        except StaleElementReferenceException:
+            threshold -+ 1
+        except (socket.error, socket.timeout):
+            break
             
     lis = browser.find_elements_by_tag_name("li")
     reblogged = []
