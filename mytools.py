@@ -7,6 +7,9 @@ import httplib2
 import random
 import socket
 import sys
+from selenium import webdriver
+from path import Path as path
+from PIL import Image
 
 usual_suspects = (IOError, httplib.HTTPException, httplib2.ServerNotFoundError, socket.error, socket.timeout)
 
@@ -33,6 +36,13 @@ def cleanup(myblog, mylist, fdays=50):
         except KeyError:
             pass              
     return newlist
+
+def isimage(myfile):
+    try:
+        Image.open(myfile)
+        return True
+    except IOError:
+        return False
     
 def name(myblog,blogNumber=0):
     goahead = False
@@ -59,20 +69,23 @@ def save_tumblr_csv(myfile, mylist):
 
 def bulk_scrape_users(myfile):
     import scrape_users
+    browser = webdriver.Firefox()
     tmp = set(load_tumblr_csv(myfile))
     everybody = []
     reblogged = []
     liked = []
     for i in tmp:
         try:
-            (a,b,c) = scrape_users.runme(i)
+            (a,b,c) = scrape_users.runme(i,browser=browser)
         except:
             print "Unexpected error:", sys.exc_info()[0]
             print i
+            browser.close()
             return((list(set(everybody)),list(set(reblogged)),list(set(liked))))
         everybody += a
         reblogged += b
         liked += c
+    browser.close()
     return((list(set(everybody)),list(set(reblogged)),list(set(liked))))
 
 def tumblr_follow_html(mylist,outfile="followme.html"):
@@ -242,7 +255,7 @@ def getFollowers(myblog, waittime = 1, autorestart = True, verbose = False, cuto
         result = result + tmp['users']
     return result
     
-def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout, targetBlog = None, blogNumber=0):
+def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout, targetBlog = None, blogNumber=0, blogtype=None, blogcutoff = None):
     socket.setdefaulttimeout(timeout)
     goahead = False
     while goahead == False:
@@ -264,20 +277,34 @@ def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff =
     rem = n % m
     cycles = n/m
     result = []
+    breakfor = False
     for i in range(0,cycles):
         if verbose == True:
             print "Trying Posts {} to {}".format(m*i + 1, m*i + m)
-        params = {'offset': m*i, 'limit': m}
+        params = {'offset': m*i, 'limit': m, 'reblog_info': True}
+        if blogtype is not None:
+            params['type'] = blogtype
         goahead = False
         while goahead == False:
             try:
                 time.sleep(waittime)
                 tmp = myblog.posts(targetBlog,**params)
+                if blogcutoff is not None:
+                    for t in tmp['posts']:
+                        if t['id'] == blogcutoff:
+                            breakfor = True
                 goahead = True
             except usual_suspects:
                 goahead = False
-        result = result + tmp['posts']
-    params = {'offset': m*cycles, 'limit': rem}
+        try:
+            result = result + tmp['posts']
+        except KeyError:
+            pass
+        if breakfor:
+            break
+    params = {'offset': m*cycles, 'limit': rem, 'reblog_info': True}
+    if blogtype is not None:
+        params['type'] = blogtype
     if verbose == True:
         print "Finishing..."
     if rem != 0:
@@ -292,25 +319,30 @@ def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff =
         result = result + tmp['posts']
     return result 
 
-def getImagePosts(myblog, myposts = None, blogNumber=0):
+def getImagePosts(myblog, myposts = None, verbose=True, blogNumber=0, targetBlog = None, blogcutoff=None, ignore_reblogs = False):
     if myposts is None:
-        myposts = getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout, targetBlog = None, blogNumber=blogNumber)
+        myposts = getPosts(myblog, waittime = 1, autorestart = True, verbose = verbose, cutoff = None, timeout = default_timeout, targetBlog = targetBlog, blogNumber=blogNumber, blogtype="photo", blogcutoff = blogcutoff)
     dates = []
     postURLs = []
     imageURLs = []
     notes = []
+    reblog = []
+    _id = []
     for p in myposts:
-        if (p['trail'] == []) & (u_to_s(p['type']) == 'photo'):
+        if ((p['trail'] == []) or (ignore_reblogs == False)) & (u_to_s(p['type']) == 'photo'):
             dates.append(u_to_s(p['date']))
             postURLs.append(u_to_s(p['post_url']))
             imageURLs.append(u_to_s(p['photos'][0]['original_size']['url']))
             notes.append(p['note_count'])
+            reblog.append(p['reblog_key'])
+            _id.append(p['id'])
     results = pd.DataFrame()
     results['Date'] = dates
     results['Post URL'] = postURLs
     results['Image URL'] = imageURLs
     results['Notes'] = notes
-    results = results.sort_values(by="Notes",ascending=False)
+    results['reblog_key'] = reblog
+    results['id'] = _id
     return results
     
 def getPostTitles(posts):
@@ -344,6 +376,47 @@ def getF(myfunction=None, flist = None, waittime=1, myraw = None, cutoff = None,
         return result
     else:
         return load_tumblr_csv(flist) 
+#CSV Structure:
+#Column 1: blog name
+#Column 2: post id
+#Column 3: reblog key        
+def mass_queue(myblog, myblogname, mycsv):
+    myqueue = pd.read_csv(mycsv, header=None)
+    for i in xrange(0,len(myqueue)):
+        myblog.reblog(myblogname,id=myqueue.loc[i,1],reblog_key=myqueue.loc[i,2],state="queue")
+        
+def queue_folder(myblog, myblogname, folder, tags=[]):
+    myfolder = path(folder)
+    for f in myfolder.files():
+        if isimage(f) == True:
+            myblog.create_photo(myblogname, state="queue", tags=tags, data=str(f))
+            
+def get_all_files(folder):
+    f = path(folder)
+    folders = f.dirs()
+    files = f.files()
+    result = files
+    for i in folders:
+        result += get_all_files(i)
+    return result
+    
+def get_random_images(folder, num):
+    files = get_all_files(folder)
+    random.shuffle(files)
+    images = []
+    i = 0
+    while (len(images) < num) & (i < len(files)):
+        test = files[i]
+        i += 1
+        if isimage(test) == True:
+            images.append(test)
+    return images
+    
+def copy_random_images(source, destination, num):
+    images = get_random_images(source, num)
+    for i in images:
+        f = path(i)
+        f.copy(destination + "/" + f.namebase + str(random.randint(1,1000000000)) + f.ext)      
         
 def follow_wizard(target,myfollowing,maxfollow=200):
     targets = 0

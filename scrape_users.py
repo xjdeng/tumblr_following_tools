@@ -16,8 +16,11 @@ def str_to_user(tgt,mystr):
     else:
         return tgt[0:pos]
     
-def runme(url, threshold = 100):
-    browser = webdriver.Firefox()
+def runme(url, threshold = 100, browser=None):
+    closebrowser = False
+    if browser is None:
+        closebrowser = True
+        browser = webdriver.Firefox()
     browser.get(url)
     try:
         showbutton = browser.find_element_by_id("notes-toggle")
@@ -61,5 +64,6 @@ def runme(url, threshold = 100):
     everybody = set(liked + reblogged)
     reblogged = set(reblogged)
     liked = set(liked)
-    browser.close()
+    if closebrowser:
+        browser.close()
     return (everybody,reblogged,liked)   
