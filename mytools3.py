@@ -335,9 +335,9 @@ def getImagePosts(myblog, myposts = None, verbose=True, blogNumber=0, targetBlog
     _id = []
     for p in myposts:
         if ((p['trail'] == []) or (ignore_reblogs == False)) & (p['type'] == 'photo'):
-            dates.append(u_to_s(p['date']))
-            postURLs.append(u_to_s(p['post_url']))
-            imageURLs.append(u_to_s(p['photos'][0]['original_size']['url']))
+            dates.append(p['date'])
+            postURLs.append(p['post_url'])
+            imageURLs.append(p['photos'][0]['original_size']['url'])
             notes.append(p['note_count'])
             reblog.append(p['reblog_key'])
             _id.append(p['id'])
