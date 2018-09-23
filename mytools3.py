@@ -256,7 +256,7 @@ def getFollowers(myblog, waittime = 1, autorestart = True, verbose = False, cuto
         result = result + tmp['users']
     return result
     
-def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout, targetBlog = None, blogNumber=0, blogtype=None, blogcutoff = None):
+def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff = None, timeout = default_timeout, targetBlog = None, blogNumber=0, blogtype=None, blogcutoff = None, dayscutoff = None):
     socket.setdefaulttimeout(timeout)
     goahead = False
     while goahead == False:
@@ -276,7 +276,7 @@ def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff =
         n = min(n,cutoff)
     m = 20
     rem = n % m
-    cycles = n/m
+    cycles = round(n/m)
     result = []
     breakfor = False
     for i in range(0,cycles):
@@ -293,6 +293,10 @@ def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff =
                 if blogcutoff is not None:
                     for t in tmp['posts']:
                         if t['id'] == blogcutoff:
+                            breakfor = True
+                if dayscutoff is not None:
+                    for t in tmp['posts']:
+                        if (time.time() - t['timestamp'])/86400.0 > dayscutoff:
                             breakfor = True
                 goahead = True
             except usual_suspects:
@@ -320,9 +324,9 @@ def getPosts(myblog, waittime = 1, autorestart = True, verbose = False, cutoff =
         result = result + tmp['posts']
     return result 
 
-def getImagePosts(myblog, myposts = None, verbose=True, blogNumber=0, targetBlog = None, blogcutoff=None, ignore_reblogs = False):
+def getImagePosts(myblog, myposts = None, verbose=True, blogNumber=0, targetBlog = None, blogcutoff=None, ignore_reblogs = False, dayscutoff = None):
     if myposts is None:
-        myposts = getPosts(myblog, waittime = 1, autorestart = True, verbose = verbose, cutoff = None, timeout = default_timeout, targetBlog = targetBlog, blogNumber=blogNumber, blogtype="photo", blogcutoff = blogcutoff)
+        myposts = getPosts(myblog, waittime = 1, autorestart = True, verbose = verbose, cutoff = None, timeout = default_timeout, targetBlog = targetBlog, blogNumber=blogNumber, blogtype="photo", blogcutoff = blogcutoff, dayscutoff = dayscutoff)
     dates = []
     postURLs = []
     imageURLs = []
@@ -330,7 +334,7 @@ def getImagePosts(myblog, myposts = None, verbose=True, blogNumber=0, targetBlog
     reblog = []
     _id = []
     for p in myposts:
-        if ((p['trail'] == []) or (ignore_reblogs == False)) & (u_to_s(p['type']) == 'photo'):
+        if ((p['trail'] == []) or (ignore_reblogs == False)) & (p['type'] == 'photo'):
             dates.append(u_to_s(p['date']))
             postURLs.append(u_to_s(p['post_url']))
             imageURLs.append(u_to_s(p['photos'][0]['original_size']['url']))
