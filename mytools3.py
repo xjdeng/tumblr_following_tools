@@ -11,6 +11,8 @@ from selenium import webdriver
 from path import Path as path
 from PIL import Image
 import piexif
+import re
+from urllib.parse import urlparse
 
 usual_suspects = (IOError, http.client.HTTPException, httplib2.ServerNotFoundError, socket.error, socket.timeout)
 
@@ -384,11 +386,47 @@ def getF(myfunction=None, flist = None, waittime=1, myraw = None, cutoff = None,
 #CSV Structure:
 #Column 1: blog name
 #Column 2: post id
-#Column 3: reblog key        
+#Column 3: reblog key
+        
+def convert_url(url):
+    tumblr = urlparse(url).hostname
+    match0 = re.findall("(?<=post/)\d*", url)
+    if len(match0) == 0:
+        match = None
+    else:
+        match = match0[0]
+    return tumblr, match
+
+def getReblogKey(myblog, url, timeout = default_timeout):
+    myblogname, mypost = convert_url(url)
+    return getReblogKey_alt(myblog, myblogname, mypost, timeout)
+        
+def getReblogKey_alt(myblog, myblogname, mypost, timeout = default_timeout):
+    socket.setdefaulttimeout(timeout)
+    goahead = False
+    output = None
+    while goahead == False:
+        try:
+            output0 = myblog.posts(myblogname, id=mypost)
+            output = output0['posts'][0]['reblog_key']
+            goahead = True
+        except usual_suspects:
+            pass
+        except KeyError:
+            goahead = True
+    return output
+            
+    
+
 def mass_queue(myblog, myblogname, mycsv):
     myqueue = pd.read_csv(mycsv, header=None)
     for i in range(0,len(myqueue)):
         myblog.reblog(myblogname,id=myqueue.loc[i,1],reblog_key=myqueue.loc[i,2],state="queue")
+
+def mass_reblog(myblog, myblogname, mycsv):
+    myposts = pd.read_csv(mycsv, header=None)
+    for i in range(0,len(myposts)):
+        myblog.reblog(myblogname,id=myposts.loc[i,1],reblog_key=myposts.loc[i,2])
         
 def queue_folder(myblog, myblogname, folder, tags=[]):
     myfolder = path(folder)
