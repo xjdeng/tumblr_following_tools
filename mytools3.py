@@ -384,10 +384,7 @@ def getF(myfunction=None, flist = None, waittime=1, myraw = None, cutoff = None,
         return result
     else:
         return load_tumblr_csv(flist) 
-#CSV Structure:
-#Column 1: blog name
-#Column 2: post id
-#Column 3: reblog key
+
         
 def convert_url(url):
     tumblr = urlparse(url).hostname
@@ -416,8 +413,29 @@ def getReblogKey_alt(myblog, myblogname, mypost, timeout = default_timeout):
         except KeyError:
             goahead = True
     return output
+
+def reblog_file_generator(myblog, urls, outputfile):
+    keys = []
+    blogs = []
+    posts = []
+    if isinstance(urls, list) == False:
+        urls = load_tumblr_csv(urls)
+    for u in urls:
+        blog, post = convert_url(u)
+        key = getReblogKey_alt(myblog, blog, post)
+        keys.append(key)
+        blogs.append(blog)
+        posts.append(post)
+    output = pd.DataFrame()
+    output['blogs'] = blogs
+    output['posts'] = posts
+    output['keys'] = keys
+    output.to_csv(outputfile, index = False, header = False)
             
-    
+#CSV Structure:
+#Column 1: blog name
+#Column 2: post id
+#Column 3: reblog key    
 
 def mass_queue(myblog, myblogname, mycsv):
     myqueue = pd.read_csv(mycsv, header=None)
