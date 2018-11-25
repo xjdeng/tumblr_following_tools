@@ -9,12 +9,12 @@ Earning new followers for your Tumblr account is hard work, so I've created some
 
 ### Setting up Python ###
 
-This tool requires Python 2.7 and the following libraries:
+This tool requires Python 3.6+ and the following libraries:
 
 - Pytumblr
 - Pandas
 
-If you're new to Python, I recommend you install [Anaconda](https://www.continuum.io/downloads) for Python 2.7 which includes Pandas. **DO NOT GET THE VERSION FOR PYTHON 3.X!!!**
+If you're new to Python, I recommend you install [Anaconda](https://www.continuum.io/downloads) for Python 3.6+ which includes Pandas. **DO NOT GET THE VERSION FOR PYTHON 2.X!!!**
 
 Then install Pytumblr by running the following at the command line:
 
@@ -69,7 +69,7 @@ Run Python by simply typing _python_ and pressing enter.
 Next, run the following commands:
 
 ```
-import mytools as m
+import mytools3 as m
 client = m.getClient("credentials.csv")
 client.info()
 ```
