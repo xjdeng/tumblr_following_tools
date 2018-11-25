@@ -10,7 +10,7 @@ def randdelay(a,b):
     time.sleep(random.uniform(a,b))
 
 def str_to_user(tgt,mystr):
-    pos = tgt.find(mystr)
+    pos = str(tgt).find(mystr)
     if pos <= 1:
         return None
     else:
