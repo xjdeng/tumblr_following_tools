@@ -70,9 +70,8 @@ def save_tumblr_csv(myfile, mylist):
     tmp = pd.DataFrame(mylist)
     tmp.to_csv(myfile, index=False, header = False)
 
-def bulk_scrape_users(myfile):
+def bulk_scrape_users(myfile, browser = webdriver.Firefox()):
     import scrape_users
-    browser = webdriver.Firefox()
     tmp = set(load_tumblr_csv(myfile))
     everybody = []
     reblogged = []
