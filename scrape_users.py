@@ -14,7 +14,7 @@ def str_to_user(tgt,mystr):
     if pos <= 1:
         return None
     else:
-        return tgt[0:pos]
+        return tgt[0:pos].strip()
     
 def runme(url, threshold = 100, browser=None):
     closebrowser = False
@@ -24,7 +24,7 @@ def runme(url, threshold = 100, browser=None):
     browser.get(url)
     try:
         showbutton = browser.find_element_by_id("notes-toggle")
-        teststr = u_to_s(showbutton.text)
+        teststr = showbutton.text#u_to_s(showbutton.text)
         if teststr == "Show":
             showbutton.click()
             randdelay(0,1)
@@ -54,7 +54,7 @@ def runme(url, threshold = 100, browser=None):
     reblogged = []
     liked = []
     for i in lis:
-        teststr = u_to_s(i.text)
+        teststr = i.text#u_to_s(i.text)
         test_re = str_to_user(teststr,"reblogged")
         test_li = str_to_user(teststr,"liked")
         if test_re is not None:
