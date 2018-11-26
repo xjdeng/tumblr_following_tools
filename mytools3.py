@@ -151,7 +151,8 @@ def find_tumblr(mykey,mylist):
     return False
 
 def u_to_s(uni):
-    return unicodedata.normalize('NFKD',uni).encode('ascii','ignore')
+    return uni #TODO: eliminate this function entirely
+    #return unicodedata.normalize('NFKD',uni).encode('ascii','ignore')
 
 def blogname(myraw,i):
     return u_to_s(myraw[i]['uuid'])
@@ -372,7 +373,6 @@ def getPostTitles(posts):
             except (TypeError, KeyError):
                 pass
     return titles
-                
 
 def getF(myfunction=None, flist = None, waittime=1, myraw = None, cutoff = None, verbose = False, timeout = 10): #myfunction default: client.following
     if flist == None:
