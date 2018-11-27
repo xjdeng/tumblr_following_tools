@@ -155,7 +155,8 @@ def u_to_s(uni):
     #return unicodedata.normalize('NFKD',uni).encode('ascii','ignore')
 
 def blogname(myraw,i):
-    return u_to_s(myraw[i]['uuid'])
+     url = u_to_s(myraw[i]['url'])
+     return strip_tumblr(urlparse(url).hostname)
 
 def staleBlogs(myblog = None, myraw = None, days=50, verbose=False):
     if myraw == None:
