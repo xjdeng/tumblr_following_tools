@@ -454,7 +454,7 @@ def queue_folder(myblog, myblogname, folder, tags=[]):
         if isimage(f) == True:
             try:
                 piexif.remove(f)
-            except piexif.InvalidImageDataError:
+            except (piexif.InvalidImageDataError, UnboundLocalError):
                 pass
             myblog.create_photo(myblogname, state="queue", tags=tags, data=str(f))
             
@@ -528,7 +528,7 @@ def copy_random_images(source, destination, num = 50, copier = get_random_images
         f = path(i)
         try:
             piexif.remove(i)
-        except (IOError, piexif.InvalidImageDataError):
+        except (IOError, piexif.InvalidImageDataError, UnboundLocalError):
             pass
         f.copy(destination + "/" + f.namebase + str(random.randint(1,1000000000)) + f.ext)      
         
