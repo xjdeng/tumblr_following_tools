@@ -545,4 +545,24 @@ def follow_wizard(target,myfollowing,maxfollow=200):
             result.append(target[i].rstrip())
         i += 1
     return result
+
+def last_updated(blog, blogname):
+    try:
+        return blog.blog_info(blogname.rstrip())['blog']['updated']
+    except KeyError:
+        return 0
+
+def follow_wizard2(blog, target,myfollowing,maxfollow=200):
+    target.sort(key=lambda x:last_updated(blog, x), reverse=True)
+    targets = 0
+    n = len(target)
+    i = 0
+    result = []
+    while (targets < maxfollow) & (i < n):
+        finder = find_tumblr(target[i],myfollowing)
+        if finder == False:
+            targets += 1
+            result.append(target[i].rstrip())
+        i += 1
+    return result    
             
